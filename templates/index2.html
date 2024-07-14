@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flask Template Example</title>
+    <style>
+        .red {
+            color: red;
+        }
+        .blue {
+            color: blue;
+        }
+        .green {
+            color: green;
+        }
+        .purple {
+            color: purple;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome to Flask Template Example</h1>
+    <p><strong>Integer:</strong> <span class="red">{{ t_int }}</span></p>
+    <p><strong>String:</strong> <span class="blue">{{ t_str }}</span></p>
+    <p><strong>List:</strong></p>
+    <ul>
+        {% for item in t_list %}
+            <li><span class="green">{{ item }}</span></li>
+        {% endfor %}
+    </ul>
+    <p><strong>Dictionary:</strong></p>
+    <ul>
+        {% for key, value in t_dict.items() %}
+            <li><strong>{{ key }}:</strong> <span class="purple">{{ value }}</span></li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

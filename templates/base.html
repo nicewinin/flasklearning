@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block title %}{% endblock %}</title>
+    <!-- 这是引用static下面的css文件 -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="{{ url_for('index') }}">Home</a></li>
+        </ul>
+    </nav>
+    
+
+    <!-- 这个block中没有放内容，使用index3.html对该html进行补充 -->
+    <div class="content">
+        {% block content %}{% endblock %}
+    </div>
+    
+</body>
+</html>
