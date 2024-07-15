@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, request
+from flask import Flask, render_template, redirect, url_for, request, abort, make_response,session
 from werkzeug.wrappers.response import ResponseStream
 
 app = Flask(__name__) # 创建app实例
@@ -75,6 +75,7 @@ def hello_user(name):
         return redirect(url_for('hello_guest',guest=name)) # 这里输入hello_guest的参数
 '''
 
+'''
 # 第五节 将表单数据提交到模板
 @app.route('/')
 def student():
@@ -85,6 +86,74 @@ def result():
     if request.method == 'POST': # 这个定义在index5.html中
         rst = request.form # 从index5.html中传递form数据回来
         return render_template('result5.html',result=rst) # 往result5.html中传递参数
+
+'''
+
+'''
+# 第六节 URL重定向与错误
+@app.route('/')
+def index():
+    return render_template('index7.html')
+
+@app.route('/login/', methods=['POST','GET'])
+def login():
+    if request.method == 'POST':
+        if request.form['username'] == 'admin':
+            return redirect(url_for('success'))
+        else:
+            abort(404)
+    elif request.method == 'GET':
+        return redirect(url_for('index'))
+    
+@app.route('/success/')
+def success():
+    return 'logged in successfully'
+    
+'''
+
+'''
+# 第七节 cookie和response
+@app.route('/set_cookies/')
+def set_cookie():
+    resp = make_response('success')
+    resp.set_cookie('aaa_key','aaa_value',max_age=3600)
+    return resp
+
+@app.route('/get_cookies/')
+def get_cookie():
+    cookie_1= request.cookies.get("aaa_key")
+    return cookie_1
+
+@app.route('/delete_cookies/')
+def del_cookie():
+    resp = make_response('del success')
+    resp.delete_cookie("aaa_key")
+    return resp
+'''
+
+# 第八节 session(会话)
+# session也是存在cookies里,session id是加密的
+app.secret_key = '123456'
+
+@app.route('/')
+def index():
+    if 'username' in session:
+        user = session['username']
+        return '登录用户名是：' + user + '<br>' + "<b><a href='/logout'>点击这里注销</a></b>"
+    return "您暂未登录，<br><a href='/login'><b>点击这里登录</b></a>"
+    
+@app.route('/login',methods=['GET','POST'])
+def login():
+    if request.method == 'POST': # 提交表单
+        session['username'] = request.form['username']
+        return redirect(url_for('index'))
+    elif request.method == 'GET': # 刷新页面
+        return render_template('index7.html')
+
+@app.route('/logout')
+def logout():
+    logout = session.pop('username',None)
+    return redirect(url_for('index'))
 
 if __name__ == "__main__":
     app.run(debug=True)
