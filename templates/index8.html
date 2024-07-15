@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Database Operation</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Insert Data</h1>
+    <form id="data-form">
+        Task ID: <input type="text" id="task_id" required><br>
+        Version: <input type="text" id="version" required><br>
+        <button type="submit">Submit</button>
+    </form>
+    <div id="result"></div>
+    <script>
+        $(document).ready(function () {
+            $('#data-form').on('submit', function (e) {
+                e.preventDefault();
+                var task_id = $('#task_id').val();
+                var version = $('#version').val();
+
+                $.ajax({
+                    url: '/update_or_insert',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        'task_id': task_id,
+                        'version': version
+                    }),
+                    success: function (response) {
+                        $('#result').html('<p>' + response.msg + '</p>');
+                    },
+                    error: function (xhr) {
+                        var response = JSON.parse(xhr.responseText);
+                        if (xhr.status === 400 && response.error.includes('exist')) {
+                            if (confirm(response.error + ' Do you want to update it?')) {
+                                $.ajax({
+                                    url: '/force_update',
+                                    type: 'POST',
+                                    contentType: 'application/json',
+                                    data: JSON.stringify({
+                                        'task_id': task_id,
+                                        'version': version
+                                    }),
+                                    success: function (response) {
+                                        $('#result').html('<p>' + response.msg + '</p>');
+                                    }
+                                });
+                            } else {
+                                $('#result').html('<p>Insert rejected.</p>');
+                            }
+                        } else {
+                            $('#result').html('<p>' + response.error + '</p>');
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

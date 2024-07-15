@@ -1,5 +1,6 @@
-from flask import Flask, render_template, redirect, url_for, request, abort, make_response,session
+from flask import Flask, render_template, redirect, url_for, request, abort, make_response, session, jsonify
 from werkzeug.wrappers.response import ResponseStream
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__) # 创建app实例
 
@@ -131,6 +132,7 @@ def del_cookie():
     return resp
 '''
 
+'''
 # 第八节 session(会话)
 # session也是存在cookies里,session id是加密的
 app.secret_key = '123456'
@@ -154,6 +156,93 @@ def login():
 def logout():
     logout = session.pop('username',None)
     return redirect(url_for('index'))
+'''
+
+# 第九节 sqlalchemy，网页与数据库交互
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+
+class Task(db.Model):
+    task_id = db.Column(db.String(100), primary_key=True)
+    version = db.Column(db.String(100), nullable=False)
+
+    def __repr__(self):
+        return f'<Task {self.task_id}, Version {self.version}>'
+
+@app.before_request
+def create_tables():
+    db.create_all()
+    # 删除之前插入的数据，防止重复插入
+    db.session.query(Task).delete()
+    db.session.commit()
+    # 填充初始数据
+    initial_data = [
+        ("id_01", "v01"),
+        ("id_02", "v02"),
+        ("id_03", "v03"),
+        ("id_04", "v04"),
+        ("id_05", "v02"),
+        ("id_06", "v04"),
+        ("id_07", "v07"),
+        ("id_08", "v07"),
+        ("id_09", "v09"),
+        ("id_10", "v06")
+    ]
+    for task_id, version in initial_data:
+        task = Task(task_id=task_id, version=version)
+        db.session.add(task)
+    db.session.commit()
+
+@app.route('/update_or_insert', methods=['POST'])
+def update_or_insert():
+    data = request.get_json()
+    task_id = data.get('task_id')
+    version = data.get('version')
+
+    if not task_id or not version:
+        return jsonify({"error": "Task ID and version are required"}), 400
+
+    task = Task.query.filter_by(task_id=task_id).first()
+
+    if task:  # task_id相同，提示是否覆盖
+        return jsonify({"error": f"Task ID '{task_id}' already exists."}), 400
+    else:
+        # task_id不同，检查version
+        task_with_version = Task.query.filter_by(version=version).first()
+        if task_with_version:  # version相同, 报错
+            return jsonify({"error": f"Version '{version}' already exists for a different task ID."}), 400
+        else:  # 直接插入
+            new_task = Task(task_id=task_id, version=version)
+            db.session.add(new_task)
+            db.session.commit()
+            return jsonify({"msg": "Task added successfully"}), 201
+
+@app.route('/force_update', methods=['POST'])
+def force_update():
+    data = request.get_json()
+    task_id = data.get('task_id')
+    version = data.get('version')
+
+    if not task_id or not version:
+        return jsonify({"error": "Task ID and version are required"}), 400
+
+    task = Task.query.filter_by(task_id=task_id).first()
+    if task:
+        task.version = version
+        db.session.commit()
+        return jsonify({"msg": "Task updated successfully"}), 200
+    else:
+        return jsonify({"error": "Task ID does not exist"}), 400
+
+@app.route('/')
+def index():
+    return render_template('index8.html')
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
 
 if __name__ == "__main__":
     app.run(debug=True)
