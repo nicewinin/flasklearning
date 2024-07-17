@@ -2,3 +2,12 @@
 /venv
 /env
 /myenv
+
+# 日志文件
+*.log
+*.txt
+
+# 数据库文件
+/instance
+*.db
+*.sqlite3
